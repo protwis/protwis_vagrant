@@ -1,8 +1,0 @@
-construct: 4n4w
-pdb: 4N4W
-signaling_protein: None
-auxiliary_protein: BRIL
-preferred_chain: A
-state: Inactive
-ligand:
-- {name: SNT, pubchemId: 6878030, role: Antagonist, type: Small molecule}
