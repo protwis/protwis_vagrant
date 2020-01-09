@@ -44,6 +44,12 @@ Clone into the "shared" directory (replace your-username with your GitHub userna
     cd ~/protwis_vagrant
     git clone https://github.com/your-username/protwis.git shared/sites/protwis
 
+##### Add vagrant plugin
+
+This allows for VM boxes to change disk size
+
+    vagrant plugin install vagrant-disksize
+
 ##### Start the vagrant box
 
 This may take a few minutes
