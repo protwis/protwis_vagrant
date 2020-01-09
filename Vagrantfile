@@ -1,7 +1,8 @@
 Vagrant.configure("2") do |config|
 
     # Vagrant box to build off of.
-    config.vm.box = "ubuntu/trusty64"
+    config.vm.box = "ubuntu/bionic64"
+    config.disksize.size = '20GB'
 
     # Forward ports
     config.vm.network :forwarded_port, guest: 22, host: 2226, id: "ssh"
@@ -11,8 +12,8 @@ Vagrant.configure("2") do |config|
     # Allocate resources
     config.vm.provider :virtualbox do |vb|
         vb.customize ["modifyvm", :id, "--ioapic", "on"]
-        vb.customize ["modifyvm", :id, "--memory", "1024"]
-        vb.customize ["modifyvm", :id, "--cpus", "2"]
+        vb.customize ["modifyvm", :id, "--memory", "4096"]
+        vb.customize ["modifyvm", :id, "--cpus", "4"]
     end
 
     # Set up a shared directory
@@ -20,6 +21,7 @@ Vagrant.configure("2") do |config|
 
     # copy puppet scripts to VM
     config.vm.provision "file", source: "protwis_puppet_modules", destination: "/protwis/conf/protwis_puppet_modules"
+    config.vm.provision "shell", inline: "sudo apt-get update && sudo apt-get install -y puppet"
 
     # Enable the Puppet provisioner
     config.vm.provision :puppet do |puppet|
