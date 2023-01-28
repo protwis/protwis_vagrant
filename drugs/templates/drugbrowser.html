@@ -1,0 +1,177 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<style media="screen">
+</style>
+{% endblock %}
+{% block content %}
+<h2>Drug Browser</h2>
+<button onclick="tableToExcel()" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
+<div class="row">
+    <div class="col-md-12 text-center">
+        {% if drugdata %}
+        <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+            <table width="100%" class="display table" id="drugdata">
+
+                <thead>
+                    <tr>
+                        <th style="background-color:#98df8a;text-align:center">Drug Name</th>
+                        <th style="background-color:#98df8a;text-align:center">Indication</th>
+                        <th style="background-color:#aec7e8;text-align:center">Target</th>
+                        <th style="background-color:#aec7e8;text-align:center">Target Level</th>
+                        <th style="background-color:#aec7e8;text-align:center">Class</th>
+                        <th style="background-color:#aec7e8;text-align:center">Family</th>
+                        <th style="background-color:#ffbb78;text-align:center">Status</th>
+                        <th style="background-color:#ffbb78;text-align:center">Phase</th>
+                        <th style="background-color:#ffbb78;text-align:center">Clinical Status</th>
+                        <th style="background-color:#ffbb78;text-align:center">Year of Approval</th>
+                        <th style="background-color:#ffbb78;text-align:center">Drug Type</th>
+                        <th style="background-color:#ffbb78;text-align:center">Mechanism of Action</th>
+                        <th style="background-color:#ffbb78;text-align:;word-wrap: break-word">References</th>
+                        <th style="background-color:#ffbb78;text-align:center">NHS</th>
+                    </tr>
+                    <tr>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in drugdata %}
+                <tr>
+                {% if row.NHS == 'yes' %}
+                  <td style="text-align:center"><a href='/drugs/nhs/{{row.name|safe}} ' target="_blank"> {{row.name|safe}}</a></td>
+                {% else %}
+                  <td style="text-align:center">{{row.name|safe}}</a></td>
+                {% endif %}
+                <td style="text-align:center">{{row.indication|safe}}</td>
+                <td style="text-align:center"> <a href='/protein/{{row.target|safe}} '> {{row.target|safe}} </a></td>
+                <td style="text-align:center">{{row.targetlevel|safe}}</td>
+                <td style="text-align:center">{{row.class|safe}}</td>
+                <td style="text-align:center">{{row.family|safe}}</td>
+                <td style="text-align:center">{{row.status|safe}}</td>
+                <td style="text-align:center">{{row.phase|safe}}</td>
+                <td style="text-align:center">{{row.clinicalstatus|safe}}</td>
+                <td style="text-align:center">{{row.approval|safe}}</td>
+                <td style="text-align:center">{{row.drugtype|safe}}</td>
+                <td style="text-align:center">{{row.moa|safe}}</td>
+                <td style="text-align:center">
+                  {% for pmid in row.references %}
+                    {% if pmid != "nan" %}
+                      <a href='https://www.ncbi.nlm.nih.gov/pubmed/{{pmid}}' target="_blank">{{pmid}}</a>
+                    {% else %}
+                      -
+                    {% endif %}
+                    {% if not forloop.last %} | {% endif %}
+                  {% endfor %}
+                </td>
+                  {% if row.NHS == 'yes' %}
+                    <td style="text-align:center"><a href='/drugs/nhs/{{row.name|safe}} '> {{row.NHS|safe}}</a></td>
+                  {% else %}
+                    <td style="text-align:center">{{row.NHS|safe}}</a></td>
+                  {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p> Ooops! There is no data to show here yet. </p>
+    {% endif %}
+    </div>
+</div>
+<br>
+
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+
+<script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            var table = $('#drugdata').DataTable({
+                "scrollX": true,
+                // 'scrollY': $(window).height()-300,
+                'bScrollCollapse': true,
+                'paging': true,
+                "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
+                'orderCellsTop': true,
+                'autoWidth': true,
+                'buttons' : ['excel'],
+                'dom': 'T<"clear">lfrtip',
+                'order': [[6, "desc"]], // order by date
+                "aoColumns": [
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"}],
+                'tableTools': {
+                    "sRowSelect": "multi",
+                    "aButtons": []
+                },
+                initComplete: function () {
+                    $('#drugdata').dataTable().columnFilter({
+                        'sPlaceHolder': "head:after",
+                        'aoColumns': [
+                            { type: "text" },
+                            { type: "text" },
+                            { type: "text" },
+                            { type: "select" },
+                            { type: "select" }, // Family
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "text" },
+                            { type: "text" },
+                        ]
+                    });
+                }
+
+            });
+        });
+    </script>
+    <script>
+      var tableToExcel = (function () {
+        var encabezado = '<html><head><meta http-equiv="content-type" content="text/plain; charset=UTF-8"/><style> table, td {border:thin solid black} table {border-collapse:collapse}</style></head><body><table>';
+        var dataTable = document.getElementById('drugdata').innerHTML;
+        var piePagina = "</table></body></html>";
+        var tabla = encabezado + dataTable + piePagina;
+        var myBlob =  new Blob( [tabla] , {type:'text/html'});
+        var url = window.URL.createObjectURL(myBlob);
+        var a = document.createElement("a");
+        document.body.appendChild(a);
+        a.href = url;
+        a.download = "DrugBrowserData.xls";
+        a.click();
+
+        setTimeout(function() {window.URL.revokeObjectURL(url);},0);
+      });
+    </script>
+{% endblock %}

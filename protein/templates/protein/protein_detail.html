@@ -1,0 +1,186 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load structure_extras %}
+
+
+{% block content %}
+
+{% if protein_no_found %}
+<br><br>
+<div class="row text-success">
+    <div class="text-center">
+        <h2>{{ protein_no_found|safe }} not in GPCRdb - contact us if it should be.</h2>
+    </div>
+</div>
+{% else %}
+
+<div class="row text-success">
+    <div class="text-center">
+        <h2>{{ p.name|safe }} ({{ p.entry_name }})</h2>
+    </div>
+</div>
+
+{% include "protein/protein_info.html" %}
+
+{% include "protein/sequence_viewer.html" %}
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>LINKS</h4>
+    </div>
+    <div class="col-md-10">
+        {% for link in protein_links %}
+        <p><a href="{{ link }}">{{ link.web_resource.name }}</a></p>
+        {% empty %}
+        No links available
+        {% endfor %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>DIAGRAMS</h4>
+    </div>
+    <div class="col-md-10">
+      {{ p.get_snake_plot }}
+      <p><div class="btn-group">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false">
+          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+          <li>
+              <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.png',
+              {scale: 3});">PNG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsJpg(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.jpg',
+              {scale: 3});">JPG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsTiff(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.tiff',
+              {scale: 3});">TIFF</a>
+              </a>
+          </li>
+          <li>
+          <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.entry_name }}">SVG</a>
+          </li>
+          </ul>
+      </div></p>
+      
+    {{ p.get_helical_box }}
+    <p><div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+        aria-haspopup="true" aria-expanded="false">
+        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+        <li>
+            <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.png',
+            {scale: 3});">PNG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsJpg(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.jpg',
+            {scale: 3});">JPG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsTiff(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.tiff',
+            {scale: 3});">TIFF</a>
+            </a>
+        </li>
+        <li>
+        <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_{{ p.entry_name }}">SVG</a>
+        </li>
+        </ul>
+    </div></p>
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>MUTATIONS</h4>
+    </div>
+    <div class="col-md-10">
+    <a href="/mutations/protein/{{ p }}">{{ mutations|length }} mutation data points available.</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>ENDOGENOUS LIGANDS</h4>
+    </div>
+    <div class="col-md-10">
+        <p style="display: inline;">
+          {% if p.endogenous_gtp_set.all.count > 0 %}
+            {{ p.endogenous_gtp_set.all | endo_format | safe }}
+          {% else %}
+            No endogenous ligands available
+          {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>HOMOLOGY MODELS</h4>
+    </div>
+
+    <div class="col-md-10">
+        {% for hommod in homology_models %}
+            <p style="display: inline;"><a href="/structure/homology_models/{{ hommod.protein.entry_name }}_{{ hommod.state.slug }}">{{ hommod.protein.entry_name }} {{ hommod.state.slug }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
+        {% empty %}
+          {% if structures|length > 0 %}
+            No homology models have been generated as experimental structures are available (see below).
+          {% else %}
+            No homology models available. Check the Archive on <a href="/structure/homology_models">Structure models</a> for earlier releases.
+          {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>STRUCTURES</h4>
+    </div>
+    {% if structures|length > 0 %}
+    <div class="col-md-10">
+        <p>Found {{ structures|length }} structure(s) - view all details on the <a href="/structure" target='_blank'>Structures page</a></p>
+        <p>PDBs: {{ structures | create_struct_links | safe }}</p>
+    </div>
+
+    {% else %}
+    <div class="col-md-10">
+        No structures available
+    </div>
+    {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}
+
+
+{% block addon_css %}
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/sequenceviewer.js' %}"></script>
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+    <script src="{% static 'home/js/diagrams.js' %}"></script>
+    <script src="{% static 'home/js/color_picker.js' %}"></script>
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/alignment.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+Binding pocket calculations CLASS F
+
+<table width=800>
+<tr><th>Generic Number</th><th>Genes accessible at position</th><th>Interactions at position</th><th>Mutation at position of >5 fold or 'abolish'</th><th>Score</th></tr>
+{% for r,s in gn.items %}
+<tr><td>{{r}}</td><td>{{s.score.a}}</td><td>{{s.score.i}}</td><td>{{s.score.m_weight}}</td><td>{{s.score.s_weight}}</td></tr>
+{% endfor %}
+</table>
+{% endblock %}

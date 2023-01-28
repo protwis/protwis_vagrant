@@ -1,0 +1,87 @@
+<h4>Sequence segment selection</h4> <hr>
+        <a href="javascript:void(0)" onclick="SelectAlignableResidues('segments')"
+        class="btn btn-primary btn-md  btn-block selection_buttons">
+            Structurally conserved (generic) positions
+        </a>
+        <a href="javascript:void(0)" onclick="SelectFullSequence('segments')"
+        class="btn btn-primary btn-md  btn-block selection_buttons">
+            Full sequence
+        </a>
+
+<hr>
+
+<a href="javascript:void(0)" onclick="ToggleSegments()" class="btn btn-info btn-md btn-block selection_buttons"> Sequence Segments <span class="glyphicon glyphicon-arrow-down pull-right"></span></a>
+
+<div id="sequence_segments" style="display: none">
+{% for ss_cat in ss_cats %}
+    <h5>
+    {% if ss_cat.0.title == 'Helix' %}
+        Transmembrane (TM) helices and H8
+    {% elif s_cat.0.title == 'Loop' %}
+        Loops
+    {% elif s_cat.0.title == 'Terminus' %}
+        Termini
+    {% else %} 
+        {{ ss_cat.0.title }}
+    {% endif %} 
+    </h5>
+    {% for s in ss %}
+        {% if s.category == ss_cat.0 %}
+        <div class="btn-group" role="group">
+            <a href="javascript:void(0)" onclick="AddToSelection('segments', '{{ s.category }}', '{{ s.id }}')"
+            class="btn btn-primary btn-sm">
+                {{ s.slug }}
+            </a>
+            {% if not ignore_residue_selection and s.generic_numbers.all %}
+            <a href="javascript:void(0)" onclick="ExpandSegment('{{ s.id }}', '{{ position_type }}')"
+            class="btn btn-primary btn-sm">
+                <span class="glyphicon glyphicon-arrow-down"></span>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endfor %}
+{% endfor %}
+<p>
+
+<div id='segment-generic-numbers'>
+</div>
+
+</p>
+{% if not ignore_residue_selection %}
+<p>
+    <a data-toggle="modal" data-target="#PositionsFileSelector"
+        class="btn btn-primary btn-xs">
+        <span class="glyphicon glyphicon-plus"></span> Read residue positions from a file
+    </a>
+</p>
+{% endif %}
+</div>
+
+{% if not ignore_residue_selection %}
+    <a href="javascript:void(0)" onclick="ToggleResidueSets()" class="btn btn-info btn-md btn-block selection_buttons"> Residue sets<span class="glyphicon glyphicon-arrow-down pull-right"></span></a>
+    {% if rsets %}
+                <div id="residue_sets"  style="display: none">
+                    {% include 'common/segmentselection_predefined.html' %}
+                </div>
+    {% endif %}
+{% endif %}
+
+<div class="modal fade" id="PositionsFileSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                Select a file to upload.
+            </div>
+            <div class="modal-body">
+                <form id="xls-form" enctype="multipart/form-data" method="post" onsubmit="return ReadDefinitionFromFile(document.getElementById('xls-file').files[0], '/common/residuesupload')">
+                    <input id="xls-file" type="file" /> {% csrf_token %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
+                <button onclick='$("#xls-form").submit()' type="button" class="btn btn-success" data-dismiss="modal">Save & close</button>
+            </div>
+        </div>
+    </div>
+</div>

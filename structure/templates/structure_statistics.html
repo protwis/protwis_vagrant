@@ -1,0 +1,1327 @@
+﻿{% extends "home/base.html" %}
+{% load static %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
+<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+<style>
+  .node circle {
+    /*fill: #fff;*/
+    /*stroke: DarkGreen;*/
+    /*fill: DarkGreen;*/
+    stroke: #000000 ;
+    stroke-width: .3px;
+  }
+
+  .node {
+    font: 8px sans-serif;
+  }
+
+  .link {
+    fill: none;
+    stroke: #eee;
+    stroke-width: 1px;
+  }
+
+  .node text {
+    font: 8px sans-serif;
+  }
+
+  .links {
+    fill: none;
+    stroke: #000;
+  }
+
+  .link-extensions {
+    fill: none;
+    stroke: #000;
+    stroke-opacity: .25;
+  }
+
+  .labels {
+    font: 14px Palatino;
+    font-weight: bold;
+  }
+
+  .link--active {
+    stroke: #000 !important;
+    stroke-width: 3.5px;
+  }
+
+  .link-extension--active {
+    stroke-opacity: .6;
+  }
+
+  .label--active {
+    font-weight: bold;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+{% if page == 'structure' %}
+<h4>Number of structures, including multiple of same receptor (complex)</h4>
+<table style="width:75% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>Class<br />(Family)</b></td>
+            {% for class in all_structures_by_class.items %}
+            <td align="center"><b>
+              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
+              {% else %}{{ class.0 }}
+              {% endif %}
+            </b></td>
+            {% endfor %}
+            <td align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Receptors</td>
+            {% for class in all_structures_by_class.items %}
+            <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_structures }}</td>
+        </tr>
+        <tr>
+            <td>Receptor - ligand complexes</td>
+            {% for class in all_complexes_by_class.items %}
+            <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_complexes }}</td>
+        </tr>
+        <tr>
+            <td>Receptor - G protein complexes</td>
+            {% for class in all_gprots_by_class.items %}
+            <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_gprots }}</td>
+        </tr>
+        <tr>
+            <td>Active-state receptors*</td>
+            {% for class in all_active_by_class.items %}
+            <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_active }}</td>
+        </tr>
+    </tbody>
+    <tr> </tr>
+
+</table>
+<br />
+<br />
+<h4>Number of unique receptor complexes</h4>
+<table style="width:75% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>Class<br />(Family)</b></td>
+            {% for class in unique_structures_by_class.items %}
+            <td align="center"><b>
+              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
+              {% else %}{{ class.0 }}
+              {% endif %}
+            </b></td>
+            {% endfor %}
+            <td align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Receptors**</td>
+            {% for class in unique_structures_by_class.items %}
+            <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_structures }}</td>
+        </tr>
+        <tr>
+            <td>Receptor - ligand complexes</td>
+            {% for class in unique_complexes_by_class.items %}
+            <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_complexes }}</td>
+        </tr>
+        <tr>
+            <td>Receptor - G protein complexes</td>
+            {% for class in unique_gprots_by_class.items %}
+            <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_gprots }}</td>
+        </tr>
+        <tr>
+            <td>Active-state receptors*</td>
+            {% for class in unique_active_by_class.items %}
+            <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_active }}</td>
+        </tr>
+    </tbody>
+    <tr> </tr>
+</table>
+*Active state is defined as agonist-bound and opened intracellular TM bundle.
+**Receptor-orthologues are only counted once.
+{% elif page == 'gprot' %}
+<h4>Number of G protein structures</h4>
+<table style="width:75% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>Structures</td>
+            {% for class in all_gprots_by_gclass.items %}
+            <td align="center"><b>{{ class.0|safe}}</b></td>
+            {% endfor %}
+            <td align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+      <tr>
+          <td>Non complexed G protein</td>
+          {% for class in noncomplex_gprots_by_gclass.items %}
+          <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ noncomplex_gprots }}</td>
+      </tr>
+      <tr>
+          <td>Receptor - G protein complexes</td>
+          {% for class in all_gprots_by_gclass.items %}
+          <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ all_gprots }}</td>
+      </tr>
+      <tr>
+          <td>Total structures</td>
+          {% for item in total_gprots_by_gclass %}
+          <td align="center" style="vertical-align:middle !important">{{ item }}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ total_gprots }}</td>
+      </tr>
+    </tbody>
+    <tr> </tr>
+</table>
+<br />
+<br />
+<h4>Number of GPCR-G protein structures (distinct complexes)</h4>
+<table style="width:75% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>Receptor Class</td>
+            {% for class in all_gprots_by_gclass.items %}
+            <td align="center"><b>{{ class.0|safe }}</b></td>
+            {% endfor %}
+            <td align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Class A</td>
+            {% for total, unique in gA_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_A_complexes }} ({{ unique_g_A_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class B1</td>
+            {% for total, unique in gB1_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_B1_complexes }} ({{ unique_g_B1_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class B2</td>
+            {% for total, unique in gB2_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_B2_complexes }} ({{ unique_g_B2_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class C</td>
+            {% for total, unique in gC_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_C_complexes }} ({{ unique_g_C_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class D1</td>
+            {% for total, unique in gD1_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_D1_complexes }} ({{ unique_g_D1_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class F</td>
+            {% for total, unique in gF_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_F_complexes }} ({{ unique_g_F_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class T2</td>
+            {% for total, unique in gT2_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_T2_complexes }} ({{ unique_g_T2_complexes }})</td>
+        </tr>
+    </tbody>
+    <tr> </tr>
+</table>
+{% elif page == 'arrestin' %}
+<h4>Number of arrestin structures</h4>
+<table style="width:75% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>Structures</td>
+            {% for class in all_arrestins_by_gclass.items %}
+            <td align="center"><b>{{ class.0|safe}}</b></td>
+            {% endfor %}
+            <td align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+      <tr>
+          <td>Non complexed arrestin</td>
+          {% for class in noncomplex_arrestins_by_gclass.items %}
+          <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ noncomplex_arrestins }}</td>
+      </tr>
+      <tr>
+          <td>Receptor - arrestin complexes</td>
+          {% for class in all_arrestins_by_gclass.items %}
+          <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ all_arrestins }}</td>
+      </tr>
+      <tr>
+          <td>Total structures</td>
+          {% for item in total_arrestins_by_gclass %}
+          <td align="center" style="vertical-align:middle !important">{{ item }}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ total_arrestins }}</td>
+      </tr>
+    </tbody>
+    <tr> </tr>
+</table>
+<br />
+<br />
+<h4>Number of GPCR-Arrestin structures (distinct complexes)</h4>
+<table style="width:75% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>Receptor Class</td>
+            {% for class in all_arrestins_by_gclass.items %}
+            <td align="center"><b>{{ class.0|safe }}</b></td>
+            {% endfor %}
+            <td align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Class A</td>
+            {% for total, unique in arrA_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_A_complexes }} ({{ unique_arr_A_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class B1</td>
+            {% for total, unique in arrB1_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_B1_complexes }} ({{ unique_arr_B1_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class B2</td>
+            {% for total, unique in arrB2_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_B2_complexes }} ({{ unique_arr_B2_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class C</td>
+            {% for total, unique in arrC_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_C_complexes }} ({{ unique_arr_C_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class D1</td>
+            {% for total, unique in arrD1_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_D1_complexes }} ({{ unique_arr_D1_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class F</td>
+            {% for total, unique in arrF_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_F_complexes }} ({{ unique_arr_F_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class T2</td>
+            {% for total, unique in arrT2_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_T2_complexes }} ({{ unique_arr_T2_complexes }})</td>
+        </tr>
+    </tbody>
+    <tr> </tr>
+</table>
+{% endif %}
+<br />
+<br />
+Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page.<br />
+The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.<br />
+
+{% if page == 'structure' %}
+<style type="text/css">
+  .gprot_orange {
+    color: orange;
+  }
+
+  .gprot_red {
+    color: red;
+  }
+
+  .gprot_green {
+    color: forestgreen;
+  }
+
+  .graydiv {
+      height: 20px;
+      width: 350px;
+      background: linear-gradient(to right, white 0%, black 100%)
+  }
+</style>
+<br />
+<br />
+<br />
+<div id="charts" visibility="hidden">
+    <?xml version="1.0" standalone="no" ?>
+    <svg id="chart_legend" width="950px" height="100px" version="1.1" xmlns="http://www.w3.org/2000/svg">
+        <text x="100" y="18" font-family="Verdana" font-size="14">By class</text>
+        <text x="550" y="18" font-family="Verdana" font-size="14">By ligand type</text>
+
+        <circle class="chart_type" id="unique" cx="450" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="470" y="33" font-family="Verdana" font-size="10">The number of unique receptor with structures available.</text>
+
+        <circle class="chart_type" id="unique_y" cx="450" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="470" y="53" font-family="Verdana" font-size="10">The number of unique receptors GPCR-ligand complexes.</text>
+
+        <circle class="chart_type" id="all" cx="450" cy="70" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="470" y="73" font-family="Verdana" font-size="10">The number of structures available.</text>
+
+        <circle class="chart_type" id="unique_class" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique receptors with structures.</text>
+
+        <circle class="chart_type" id="unique_class_y" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="53" font-family="Verdana" font-size="10">The number of unique GPCR-ligand complexes.</text>
+
+        <circle class="chart_type" id="all_class" cx="10" cy="70" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="73" font-family="Verdana" font-size="10">The number of structures available.</text>
+    </svg>
+    <div id="unique" class="chart_container" style="display: none;">
+        <div id="unique_cryst_container"><svg id="unique_cryst" style="width:800px;height:600px;"></svg></div>
+        <script>
+        data_unique_cryst_container = {{ chartdata|safe }};
+        </script>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="javascript:saveSvgAsPng(document.getElementById('unique_cryst'), 'unique_crystalized_receptors.png',
+            {scale: 3});">PNG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsJpg(document.getElementById('unique_cryst'), 'unique_crystalized_receptors.jpg',
+            {scale: 3});">JPG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsTiff(document.getElementById('unique_cryst'), 'unique_crystalized_receptors.tiff',
+            {scale: 3});">TIFF</a>
+                    </a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('unique_cryst'), 'unique_crystalized_receptors.svg');">SVG</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div id="unique_y" class="chart_container" style="display: none;">
+        <div id="unique_cryst_year_container"><svg id="unique_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <script>
+            data_unique_cryst_year_container={{ chartdata_y|safe }};
+        </script>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="javascript:saveSvgAsPng(document.getElementById('unique_cryst_year'), 'unique_crystalized_receptors_by_year.png',
+            {scale: 3});">PNG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsJpg(document.getElementById('unique_cryst_year'), 'unique_crystalized_receptors_by_year.jpg',
+            {scale: 3});">JPG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsTiff(document.getElementById('unique_cryst_year'), 'unique_crystalized_receptors_by_year.tiff',
+            {scale: 3});">TIFF</a>
+                    </a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('unique_cryst_year'), 'unique_crystalized_receptors_by_year.svg');">SVG</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div id="all" class="chart_container" style="display: none;">
+        <div id="cryst_year_container"><svg id="data_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <script>
+            data_cryst_year_container={{ chartdata_all|safe }};
+        </script>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="javascript:saveSvgAsPng(document.getElementById('data_cryst_year'), 'crystalized_receptors_by_year.png',
+            {scale: 3});">PNG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsJpg(document.getElementById('data_cryst_year'), 'crystalized_receptors_by_year.jpg',
+            {scale: 3});">JPG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsTiff(document.getElementById('data_cryst_year'), 'crystalized_receptors_by_year.tiff',
+            {scale: 3});">TIFF</a>
+                    </a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('data_cryst_year'), 'crystalized_receptors_by_year.svg');">SVG</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+<!-- </div>
+<br />
+<br />
+
+<div id="charts_classes" visibility="hidden"> -->
+    <!-- <?xml version="1.0" standalone="no" ?>
+    <svg id="chart_class_legend" width="450px" height="70px" version="1.1" xmlns="http://www.w3.org/2000/svg">
+        <circle class="chart_type" id="unique_class" cx="10" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="13" font-family="Verdana" font-size="10">The number of unique crystallized receptors available.</text>
+        <circle class="chart_type" id="unique_class_y" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique receptors CRYSTAL STRUCTURES PUBLISHED each year.</text>
+        <circle class="chart_type" id="all_class" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="53" font-family="Verdana" font-size="10">The number of crystal structures available each year.</text>
+    </svg> -->
+    <div id="unique_class" class="chart_container" style="display: none;">
+        <div id="unique_cryst_class_container"><svg id="unique_class_cryst" style="width:800px;height:600px;"></svg></div>
+        <script>
+        data_unique_class_cryst_container={{ chartdata_class|safe }};
+        </script>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="javascript:saveSvgAsPng(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.png',
+            {scale: 3});">PNG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsJpg(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.jpg',
+            {scale: 3});">JPG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsTiff(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.tiff',
+            {scale: 3});">TIFF</a>
+                    </a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.svg');">SVG</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div id="unique_class_y" class="chart_container" style="display: none;">
+        <div id="unique_class_cryst_year_container"><svg id="unique_class_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <script>
+            data_unique_class_cryst_year_container={{ chartdata_class_y|safe }};
+        </script>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="javascript:saveSvgAsPng(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.png',
+            {scale: 3});">PNG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsJpg(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.jpg',
+            {scale: 3});">JPG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsTiff(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.tiff',
+            {scale: 3});">TIFF</a>
+                    </a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.svg');">SVG</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div id="all_class" class="chart_container" style="display: none;">
+        <div id="cryst_class_year_container"><svg id="data_class_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <script>
+            data_cryst_class_year_container={{ chartdata_class_all|safe }};
+        </script>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="javascript:saveSvgAsPng(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.png',
+            {scale: 3});">PNG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsJpg(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.jpg',
+            {scale: 3});">JPG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsTiff(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.tiff',
+            {scale: 3});">TIFF</a>
+                    </a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.svg');">SVG</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<br />
+<br />
+<!--<h4>Resolution distribution of the available crystal structures</h4>
+<script>
+    data_reso_container={{ chartdata_reso|safe }};
+</script>
+<div id="reso_container"><svg id="data_reso" style="width:800px;height:600px;"></svg></div>
+<p><div class="btn-group">
+    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">
+        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        <li>
+            <a href="javascript:saveSvgAsPng(document.getElementById('data_reso'), 'resolution_coverage.png',
+            {scale: 3});">PNG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsJpg(document.getElementById('data_reso'), 'resolution_coverage.jpg',
+            {scale: 3});">JPG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsTiff(document.getElementById('data_reso'), 'resolution_coverage.tiff',
+            {scale: 3});">TIFF</a>
+            </a>
+        </li>
+    </ul>
+</div></p>
+<br />-->
+<h4>Structural coverage of GPCR Classes</h4>
+<br />
+<div>
+  Receptor names:
+    <div class="btn-group" role="group" id="gtp_plus">
+        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+    </div>
+</div>
+<br />
+<script type="text/javascript" charset="utf-8">
+    class_a = {{ class_a|safe }};
+    class_a_options = {{ class_a_options|safe }};
+    class_b1 = {{ class_b1|safe }};
+    class_b1_options = {{ class_b1_options|safe }};
+    class_b2 = {{ class_b2|safe }};
+    class_b2_options = {{ class_b2_options|safe }};
+    class_c = {{ class_c|safe }};
+    class_c_options = {{ class_c_options|safe }};
+    class_f = {{ class_f|safe }};
+    class_f_options = {{ class_f_options|safe }};
+    class_t2 = {{ class_t2|safe }};
+    class_t2_options = {{ class_t2_options|safe }};
+    orphan = {{ orphan|safe }};
+    orphan_options = {{ orphan_options|safe }};
+    whole_dict = {{ whole_receptors|safe }}
+    circles_data = {{ circles_data | safe}}
+</script>
+<script language='javascript'>
+  maxLeafNodeLenght = 46;
+  conversion = {"active":"#008000", "intermediate":"#FFA500", "inactive":"#FF0000"};
+  $("#UniProtNames").click(function() {
+      $("#UniProtNames").addClass("active");
+      $("#IUPHARNames").removeClass("active");
+      changeLeavesLabels("class_a","UniProt", whole_dict);
+      DrawCircles('class_a', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_b1","UniProt", whole_dict);
+      DrawCircles('class_b1', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_b2","UniProt", whole_dict);
+      DrawCircles('class_b2', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_c","UniProt", whole_dict);
+      DrawCircles('class_c', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_f","UniProt", whole_dict);
+      DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_t2","UniProt", whole_dict);
+      DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("orphan","UniProt", whole_dict);
+      DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true, false);
+  });
+  $("#IUPHARNames").click(function() {
+      $("#UniProtNames").removeClass("active");
+      $("#IUPHARNames").addClass("active");
+      changeLeavesLabels("class_a","IUPHAR", whole_dict);
+      DrawCircles('class_a', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_b1","IUPHAR", whole_dict);
+      DrawCircles('class_b1', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_b2","IUPHAR", whole_dict);
+      DrawCircles('class_b2', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_c","IUPHAR", whole_dict);
+      DrawCircles('class_c', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_f","IUPHAR", whole_dict);
+      DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_t2","IUPHAR", whole_dict);
+      DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("orphan","IUPHAR", whole_dict);
+      DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true, false);
+  });
+</script>
+
+{% elif page == 'gprot' %}
+<style type="text/css">
+  .gprot_blue {
+    color: blue;
+  }
+  .gprot_red {
+    color: red;
+  }
+  .gprot_black {
+    color: black;
+  }
+  .gprot_green {
+    color: forestgreen;
+  }
+  .gprot_pink {
+    color: pink;
+  }
+  .graydiv {
+      height: 20px;
+      width: 350px;
+      background: linear-gradient(to right, white 0%, black 100%)
+  }
+</style>
+<br />
+<br />
+<p><h4><strong>Structural coverage of GPCR-G protein complexes.</strong></h4></p>
+<br />
+<div>
+  Receptor names:
+    <div class="btn-group" role="group" id="gtp_plus">
+        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+    </div>
+</div>
+<br />
+<br />
+<script type="text/javascript" charset="utf-8">
+    class_a = {{ class_a|safe }};
+    class_a_options = {{ class_a_options|safe }};
+    class_b1 = {{ class_b1|safe }};
+    class_b1_options = {{ class_b1_options|safe }};
+    class_b2 = {{ class_b2|safe }};
+    class_b2_options = {{ class_b2_options|safe }};
+    class_c = {{ class_c|safe }};
+    class_c_options = {{ class_c_options|safe }};
+    class_f = {{ class_f|safe }};
+    class_f_options = {{ class_f_options|safe }};
+    class_t2 = {{ class_t2|safe }};
+    class_t2_options = {{ class_t2_options|safe }};
+    orphan = {{ orphan|safe }};
+    orphan_options = {{ orphan_options|safe }};
+    whole_dict = {{ whole_receptors|safe }};
+    matching = {{ circles_data|safe }}
+</script>
+<script language='javascript'>
+  maxLeafNodeLenght = 46;
+  conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "GPa1 family":"#FFC0CB"};
+  $("#UniProtNames").click(function() {
+      $("#UniProtNames").addClass("active");
+      $("#IUPHARNames").removeClass("active");
+      changeLeavesLabels("class_a","UniProt", whole_dict);
+      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b1","UniProt", whole_dict);
+      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b2","UniProt", whole_dict);
+      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_c","UniProt", whole_dict);
+      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_f","UniProt", whole_dict);
+      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_t2","UniProt", whole_dict);
+      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("orphan","UniProt", whole_dict);
+      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
+  });
+  $("#IUPHARNames").click(function() {
+      $("#UniProtNames").removeClass("active");
+      $("#IUPHARNames").addClass("active");
+      changeLeavesLabels("class_a","IUPHAR", whole_dict);
+      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b1","IUPHAR", whole_dict);
+      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b2","IUPHAR", whole_dict);
+      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_c","IUPHAR", whole_dict);
+      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_f","IUPHAR", whole_dict);
+      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_t2","IUPHAR", whole_dict);
+      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("orphan","IUPHAR", whole_dict);
+      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
+  });
+</script>
+
+{% elif page == 'arrestin' %}
+<style type="text/css">
+  .gprot_blue {
+    color: blue;
+  }
+  .gprot_red {
+    color: red;
+  }
+  .gprot_black {
+    color: black;
+  }
+  .gprot_green {
+    color: forestgreen;
+  }
+  .gprot_pink {
+    color: pink;
+  }
+  .gprot_orange{
+    color: orange;
+  }
+  .gprot_purple{
+    color: purple;
+  }
+  .gprot_aquamarine{
+    color: mediumturquoise;
+  }
+  .gprot_cornflower{
+    color: cornflowerblue;
+  }
+  .graydiv {
+      height: 20px;
+      width: 350px;
+      background: linear-gradient(to right, white 0%, black 100%)
+  }
+</style>
+<br />
+<br />
+<p><h4><strong>Structural coverage of GPCR-Arrestin complexes.</strong></h4></p>
+<br />
+<div>
+  Receptor names:
+    <div class="btn-group" role="group" id="gtp_plus">
+        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+    </div>
+</div>
+<br />
+<br />
+<script type="text/javascript" charset="utf-8">
+    class_a = {{ class_a|safe }};
+    class_a_options = {{ class_a_options|safe }};
+    class_b1 = {{ class_b1|safe }};
+    class_b1_options = {{ class_b1_options|safe }};
+    class_b2 = {{ class_b2|safe }};
+    class_b2_options = {{ class_b2_options|safe }};
+    class_c = {{ class_c|safe }};
+    class_c_options = {{ class_c_options|safe }};
+    class_f = {{ class_f|safe }};
+    class_f_options = {{ class_f_options|safe }};
+    class_t2 = {{ class_t2|safe }};
+    class_t2_options = {{ class_t2_options|safe }};
+    orphan = {{ orphan|safe }};
+    orphan_options = {{ orphan_options|safe }};
+    whole_dict = {{ whole_receptors|safe }};
+    matching = {{ circles_data|safe }}
+</script>
+<script language='javascript'>
+  maxLeafNodeLenght = 46;
+  conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845", "ARRC":"#48D1CC", "ARRS":"#6495ED"};
+  console.log(matching);
+  $("#UniProtNames").click(function() {
+      $("#UniProtNames").addClass("active");
+      $("#IUPHARNames").removeClass("active");
+      changeLeavesLabels("class_a","UniProt", whole_dict);
+      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b1","UniProt", whole_dict);
+      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b2","UniProt", whole_dict);
+      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_c","UniProt", whole_dict);
+      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_f","UniProt", whole_dict);
+      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_t2","UniProt", whole_dict);
+      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("orphan","UniProt", whole_dict);
+      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
+  });
+  $("#IUPHARNames").click(function() {
+      $("#UniProtNames").removeClass("active");
+      $("#IUPHARNames").addClass("active");
+      changeLeavesLabels("class_a","IUPHAR", whole_dict);
+      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b1","IUPHAR", whole_dict);
+      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b2","IUPHAR", whole_dict);
+      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_c","IUPHAR", whole_dict);
+      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_f","IUPHAR", whole_dict);
+      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_t2","IUPHAR", whole_dict);
+      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("orphan","IUPHAR", whole_dict);
+      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
+  });
+</script>
+
+{% endif %}
+<div id="class_a" class="text-center">
+  <h4>Class A<br />(Rhodopsin)</h4>
+  {% if page == 'structure' %}
+    <br />
+    <div>
+      <div style="float: right; position: relative" class="text-center">
+        <b>Structure state frequency (from low to high)</b>
+        <div class="graydiv"></div>
+      </div>
+      <div style="float: left; position: relative" class="text-center">
+        <b>Structure state</b> <br />
+              <span class="gprot_green">&#9675; <b>Active</b></span>
+              <span class="gprot_orange">&#9675; <b>Intermediate</b></span>
+              <span class="gprot_red">&#9675; <b>Inactive</b></span>
+      </div>
+    </div>
+  {% elif page == 'gprot' %}
+  <br />
+  <div>
+    <div style="float: right; position: relative" class="text-center">
+      <b>G Protein complexes structures frequency (from low to high)</b>
+      <div class="graydiv"></div>
+    </div>
+    <div style="float: left; position: relative" class="text-center">
+      <b>G Protein complexes</b> <br />
+              <span class="gprot_blue">&#9675; <b>G&alpha;<sub>s</sub></b></span>
+              <span class="gprot_red">&#9675; <b>G&alpha;<sub>i/o</sub></b></span>
+              <span class="gprot_black">&#9675; <b>G&alpha;<sub>q/11</sub></b></span>
+              <span class="gprot_green">&#9675; <b>G&alpha;<sub>12/13</sub></b></span>
+              <span class="gprot_pink">&#9675; <b>GPa1</b></span>
+    </div>
+  </div>
+  {% elif page == 'arrestin' %}
+  <br />
+  <div>
+    <div style="float: right; position: relative" class="text-center">
+      <b>Arrestin complexes structures frequency (from low to high)</b>
+      <div class="graydiv"></div>
+    </div>
+    <div style="float: left; position: relative" class="text-center">
+      <b>Arrestin complexes</b> <br />
+          <span class="gprot_orange">&#11044; &beta;-Arrestin<sub>1</sub></span>
+          <span class="gprot_purple">&#11044; &beta;-Arrestin<sub>2</sub></span>
+          <span class="gprot_aquamarine">&#11044; Arrestin-C</span>
+          <span class="gprot_cornflower">&#11044; S-Arrestin</span>
+    </div>
+  </div>
+  {% endif %}
+</div>
+<p>
+  <div class="text-center">
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementById('class_a_svg'), 'xtals_tree_class_a.png');">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.jpg');">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'xtals_tree_class_a.tiff');">TIFF</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.svg');">SVG</a>
+            </li>
+        </ul>
+    </div>
+  </div>
+<br />
+<br />
+<br />
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="row-fluid">
+
+      <div class="span4">
+        <div id="orphan" class="text-center">
+          <h4>Class A <br /> Orphans</h4>
+        </div>
+      </div>
+
+      <div class="span4">
+        <div id="class_b1" class="text-center">
+          <h4>Class B1<br />(Secretin)</h4>
+        </div>
+      </div>
+
+      <div class="span4">
+        <div id="class_b2" class="text-center">
+          <h4>Class B2<br />(Adhesion)</h4>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="row-fluid">
+
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<br />
+<br />
+<br />
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="row-fluid">
+      <div class="span4">
+        <div id="class_c" class="text-center">
+          <h4>Class C<br />(Glutamate)</h4>
+        </div>
+      </div>
+
+      <div class="span4">
+        <div id="class_f" class="text-center">
+          <h4>Class F<br />(Frizzled)</h4>
+        </div>
+      </div>
+
+      <div class="span4">
+        <div id="class_t2" class="text-center">
+          <h4>Class T <br /> (Taste 2)</h4>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="row-fluid">
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/statistics.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/phylo_tree.js' %}"></script>
+{% if page == 'structure' %}
+<script type="text/javascript" charset="utf-8">
+    maxLeafNodeLenght = 46;
+    conversion = {"active":"#008000", "intermediate":"#FFA500", "inactive":"#FF0000"};
+    $(window).on("load", function() {
+        draw_tree(class_a, class_a_options);
+        draw_tree(class_b1, class_b1_options);
+        draw_tree(class_b2, class_b2_options);
+        draw_tree(class_c, class_c_options);
+        draw_tree(class_f, class_f_options);
+        draw_tree(class_t2, class_t2_options);
+        draw_tree(orphan, orphan_options);
+        DrawCircles('class_a', circles_data, maxLeafNodeLenght, conversion, true, false);
+        DrawCircles('class_b1', circles_data, maxLeafNodeLenght, conversion, true, false);
+        DrawCircles('class_b2', circles_data, maxLeafNodeLenght, conversion, true, false);
+        DrawCircles('class_c', circles_data, maxLeafNodeLenght, conversion, true, false);
+        DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true, false);
+        DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true, false);
+        DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true, false);
+        $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
+        $("#class_a_svg").attr('height', 1210);
+        $("#class_a_svg").attr('width', 1110);
+        $("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
+        $("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
+        $("#class_b2_svg").attr('height', 390);
+        $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
+        $("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
+        $("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
+        $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
+        $("#orphan_svg").attr('height', 360).attr('width', 360);
+    });
+</script>
+{% elif page == 'gprot' %}
+<script type="text/javascript" charset="utf-8">
+    maxLeafNodeLenght = 46;
+    conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "GPa1 family":"#FFC0CB"};
+    $(window).on("load", function() {
+        draw_tree(class_a, class_a_options);
+        draw_tree(class_b1, class_b1_options);
+        draw_tree(class_b2, class_b2_options);
+        draw_tree(class_c, class_c_options);
+        draw_tree(class_f, class_f_options);
+        draw_tree(class_t2, class_t2_options);
+        draw_tree(orphan, orphan_options);
+        DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
+        $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
+        $("#class_a_svg").attr('height', 1210);
+        $("#class_a_svg").attr('width', 1110);
+        $("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
+        $("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
+        $("#class_b2_svg").attr('height', 390);
+        $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
+        $("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
+        $("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
+        $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
+        $("#orphan_svg").attr('height', 360).attr('width', 360);
+    });
+</script>
+{% elif page == 'arrestin' %}
+<script type="text/javascript" charset="utf-8">
+    maxLeafNodeLenght = 46;
+    conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845", "ARRC":"#48D1CC", "ARRS":"#6495ED"};
+    $(window).on("load", function() {
+        draw_tree(class_a, class_a_options);
+        draw_tree(class_b1, class_b1_options);
+        draw_tree(class_b2, class_b2_options);
+        draw_tree(class_c, class_c_options);
+        draw_tree(class_f, class_f_options);
+        draw_tree(class_t2, class_t2_options);
+        draw_tree(orphan, orphan_options);
+        DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
+        $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
+        $("#class_a_svg").attr('height', 1210);
+        $("#class_a_svg").attr('width', 1110);
+        $("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
+        $("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
+        $("#class_b2_svg").attr('height', 390);
+        $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
+        $("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
+        $("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
+        $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
+        $("#orphan_svg").attr('height', 360).attr('width', 360);
+    });
+</script>
+{% endif %}
+{% endblock %}

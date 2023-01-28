@@ -1,0 +1,253 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+        <style type="text/css">
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        #filters{
+            float:left;
+          display:none;
+          position:absolute; 
+          background:white; 
+          border: 1px solid #D1C9C2; 
+          border-top: 1; 
+          width: 400px; 
+          margin: 0 auto; 
+          padding:  7px 15px; 
+          text-align: left; 
+          -webkit-border-bottom-right-radius: 6px; 
+          -webkit-border-bottom-left-radius: 6px; 
+          -moz-border-radius-bottomright: 6px; 
+          -moz-border-radius-bottomleft: 6px; 
+          border-bottom-right-radius: 6px; 
+          border-bottom-left-radius: 6px;
+          z-index: 1;
+            font-size: 10px;
+        }
+
+        @media (min-width: 1600px){
+            #content {
+                width: 1570px;
+            }
+        }
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script> 
+
+
+    <script type="text/javascript" charset="utf-8">
+    
+        $.fn.dataTable.ext.search.push(
+            function( oSettings, aData, iDataIndex ) {
+                var selected = [];
+               // $(".mutationrow").hide();
+                $('.mut_choices input:checked').each(function() {
+                    selected.push($(this).attr('name'));
+                    // $("."+$(this).attr('name')).show();
+                });
+
+                type = aData[6].split(', ');
+                if (selected.length) {
+                    if (intersect(type,selected).length) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return true;
+                }
+            }
+        );
+
+
+        $(document).ready(function () {
+            // 'use strict';
+
+            // var oTable;
+            var oTable = $('#mutations').DataTable({
+                'scrollX': true,
+                // 'paging': true,
+                // 'autoWidth': true,
+
+                scrollY:        '80vh',
+                scrollCollapse: true,
+                paging:         false
+            });
+
+            yadcf.init(oTable,
+                [
+                    {
+                        column_number : 0,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "UniProt",
+                        filter_reset_button_text: false,
+                    }, 
+                    {
+                        column_number : 1,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Receptor",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                    }, 
+                    {
+                        column_number: 2,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "GNs",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Segment",
+                        filter_reset_button_text: false,
+                    }, 
+                    {
+                        column_number : 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "WT",
+                        filter_reset_button_text: false,
+                    }, 
+                    {
+                        column_number : 6,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "MUT",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number : 7,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Effect",
+                        text_data_delimiter: ", ",
+                        filter_reset_button_text: false,
+                    },  
+                    {
+                        column_number : 8,
+                        filter_type: "text",
+                        // filter_type: "multi_select",
+                        // select_type: 'select2',
+                        // text_data_delimiter: ",",
+                        filter_default_label: "PDB",
+                        filter_reset_button_text: false,
+                    }, 
+                ],
+                {
+                    cumulative_filtering: false
+                }
+            );
+
+            yadcf.exResetAllFilters(oTable);
+
+            // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
+            // $.datepicker.setDefaults($.datepicker.regional['']);
+
+
+            $(".mut_choices input[type=checkbox]").change(function () {
+
+                console.log('redraw!');
+                oTable.draw();
+
+            });
+
+
+        });
+        $('#apply_filter').click(function() {
+            $("#filters").toggle();
+        });
+
+        $("#OpenFilters").click(function () {
+            $("#filters").toggle();
+        });
+
+
+    function intersect(a, b) {
+        var t;
+        if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
+        return a.filter(function (e) {
+            return b.indexOf(e) > -1;
+        });
+    }
+
+
+
+
+    </script> 
+{% endblock %}
+
+{% block content %}
+
+<h2> Mutations</h2>
+
+<!--
+<div class="btn-group mut_choices" data-toggle="buttons">
+    {% for mut in overall_mut_types %}
+      <label class="btn btn-default btn-sm form-check-label">
+        <input name="{{mut}}" type="checkbox" autocomplete="off" value='{{mut}}' > {{mut}}
+      </label>
+    {% endfor %}
+</div> -->
+
+<table width="100%" class="display" id="mutations">
+    <thead>
+
+        <tr>
+            <th class="protein-th" width="100px"></th>
+            <th class="protein-th"></th>
+            <th class="protein-th"></th>
+            <th class="protein-th">Position</th>
+            <th class="protein-th" width="100px"></th>
+            <th class="protein-th" width="60px"></th>
+            <th class="seq-th" width="60px"></th>
+            <th class="seq-th"></th>
+            <th class='seq-th'></th>
+        </tr>
+
+    </thead>
+    <tbody>
+    {% for key, mutation in mutation_list.items %}
+        <tr class="{{ mutation.pk }} mutationrow {{ mutation.type|join:" "}}">
+            <td>{{ mutation.entry_name|safe }}</td>
+            <td><span>{{ mutation.receptor_short|safe }}</span></td>
+            <td>{{ mutation.gn}}</td>
+            <td>{{ mutation.pos}}</td>
+            <td>{{ mutation.segment}}</td>
+            <td>{{ mutation.wt}}</td>
+            <td>{{ mutation.mut}}</td>
+            <td>{{ mutation.type|join:", "}}</td>
+            <td>{{ mutation.pdbs|join:", "}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

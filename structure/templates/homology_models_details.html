@@ -1,0 +1,408 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load structure_extras %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/simple_browser.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<style>
+canvas {
+    border:2px solid #888888;
+}
+.col-md-3 {
+    color: black;
+}
+</style>
+
+<div class="row text-success">
+    <div class="text-center">
+        {% if not model.protein.accession %}
+        <h2>{{ model.protein.entry_name|upper }} refined</h2>
+        {% else %}
+        <h2>{{ model.protein.family.name|safe }} homology model</h2>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>PROTEIN CLASS</h4>
+    </div>
+    <div class="col-md-9">
+        {{ model.protein.get_protein_class }}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>RECEPTOR</h4>
+    </div>
+    <div class="col-md-9">
+        {% if not model.protein.accession %}
+        <a href="/protein/{{ model.protein.parent.entry_name }}">{{ model.protein.parent.name|safe }}</a>
+        {% else %}
+        <a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.name|safe }}</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>SPECIES</h4>
+    </div>
+    <div class="col-md-9">
+        {{ model.protein.species.latin_name }}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>STATE</h4>
+    </div>
+    <div class="col-md-9">
+    {{ model.state.name }}
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>VERSION</h4>
+    </div>
+    <div class="col-md-9">
+        {{ version|date:"Y-m-d" }}
+    </div>
+</div>
+
+
+<style>
+.inline {display:inline;}
+.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
+</style>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>MODEL</h4>
+    </div>
+    <div class="col-md-9">
+        <div class="btn-group">
+            <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
+            <ul class="dropdown-menu" role="menu" style="min-width:50%;">
+                {% if not model.protein.accession %}
+                    <li><a id="download_btn" href="./{{model.protein.entry_name|upper}}_full/download_pdb">Full</a></li>
+                    <li><a id="download_btn" href="./{{model.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li>
+                {% else %}
+                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
+                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>
+                {% endif %}
+            </ul>
+        </div>
+        <div>
+            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
+        </div>
+        <div style="float: left; width: 60%;">
+            <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>MAIN TEMPLATE</h4>
+    </div>
+    <div class="col-md-9">
+        {% if not model.protein.accession %}
+            <a href="/protein/{{ model_main_template.protein_conformation.protein.parent.entry_name }}">{{ model_main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model_main_template.pdb_code.index }}">{{ model_main_template.pdb_code.index }}</a>
+        {% else %}
+            <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
+
+            <div class="btn-group", style="padding: 0px 0px 5px 5px;">
+                <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>TEMPLATES</h4>
+    </div>
+    <style>
+        .table-th {
+            background:#eaeaea;
+            border-bottom:1px solid #9ea7af;
+            border-right: 1px solid #9ea7af;
+            padding:5px;
+            font-size: 12px;
+            text-align:left;
+            vertical-align:middle;
+        }
+        .table-td {
+            text-align:center;
+            border-right: 1px solid #9ea7af;
+        }
+    </style>
+    <div class="col-md-9">
+        <div style='width: 70%; display:table; position:relative;'>
+            <div style='display: table-cell;'>
+                {% for prot, bts in backbone_templates.items %}
+                    {% for bt in bts %}
+                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-top: 5px;"></div>
+                        {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
+                    {% endfor %}
+                {% endfor %}
+                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px;"></div>
+                        None
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th class='table-th'></th>
+                    <th class='table-th'>Main template (%)</th>
+                    <th class='table-th'>Additional templates (%)</th>
+                    <th class='table-th' style="border-right: 0px;">No template - freely modelled (%)</th>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Backbone</td>
+                    <td class="table-td">{{bb_main}}</td>
+                    <td class="table-td">{{bb_alt}}</td>
+                    <td class="table-td" style="border-right: 0px;">{{bb_none}}</td>
+                </tr>
+                <tr>
+                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Side-chains</td>
+                    <td class="table-td">{{sc_main}}</td>
+                    <td class="table-td">{{sc_alt}}</td>
+                    <td class="table-td" style="border-right: 0px;">{{sc_none}}</td>
+                </tr>
+            </tbody>
+        </table>
+        <br>
+        Number of backbone templates: {{ backbone_templates_number }}<br>
+        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
+  <!--   </div>
+</div>
+
+<br>
+<style>
+.inline {display:inline;}
+.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
+</style>
+
+<div class="inline"> -->
+    <!-- <div>
+        <div style="float: left; width: 50%;">
+            <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+            </div>
+            <div style='width: 90%; display:table; position:relative;'>
+                <div style='width: 20%; display: table-cell;'>
+                    <button id="fullscreen">Full Screen</button>
+                </div>
+                <div style='display: table-cell;'>
+                    {% for prot, bts in backbone_templates.items %}
+                        {% for bt in bts %}
+                            <div class="graphcolor" style="background-color:{{ bt.color }}; width: 12%; margin-top: 5px;">{{ bt.pdb_code.index }}</div>
+                        {% endfor %}
+                    {% endfor %}
+                            <div class="graphcolor" style="background-color:white; width: 12%;">None</div>
+                </div>
+            </div>
+
+        </div>
+    </div> -->
+
+        <div style="padding-top: 0px; float: left; font-size: 10px; white-space: nowrap; width: 100%;">
+            <!-- <div class="btn-group">
+                <a id="download_csv_btn" class="btn btn-primary btn-mini " href="#" onClick="javascript:downloadCSV();">Download .csv</a>
+            </div> -->
+            <!-- <div class="btn-group">
+                <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
+            </div> -->
+            <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
+
+                <style>
+                    table.dataTable thead th {padding: 3px 1px 3px 3px;}
+                </style>
+                <table class="display" id="rotamers">
+                    <thead>
+                        <tr>
+                            <th>Segment</th>
+                            <th>Seq.num.</th>
+                            <th>AA</th>
+                            <th>GPCRdb#</th>
+                            <th>Backbone</th>
+                            <th>PDB</th>
+                            <th>Rotamer</th>
+                            <th>PDB</th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for rota in rotamers %}
+                        <tr>
+                            <td>{{ rota.residue.protein_segment.slug }}</td>
+                            <td>{{ rota.residue.sequence_number }}</td>
+                            <td>{{ rota.residue.amino_acid }}</td>
+                            {% if rota.residue.display_generic_number %}
+                                <td>{{ rota.residue.display_generic_number.label }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                            {% if rota.backbone_template %}
+                                <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                                <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index|safe }}</a></td>
+                            {% else %}
+                                <td>-</td>
+                                <td>-</td>
+                            {% endif %}
+                            {% if rota.rotamer_template %}
+                                <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                                <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index|safe }}</a></td>
+                            {% else %}
+                                <td>-</td>
+                                <td>-</td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block addon_js %}
+    <script src="{% static 'home/js/ngl.js' %}"> </script>
+        <script>
+        document.addEventListener( "DOMContentLoaded", function(){
+            stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
+            var color_residues = JSON.parse('{{color_residues|safe}}');
+            color_residues.push(["darkorchid","*"])
+
+            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
+
+            stage.loadFile( "/structure/homology_models/view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
+                o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
+                o.centerView();
+            } );
+        } );
+
+        $( "#fullscreen" ).click(function() {
+            stage.toggleFullscreen();
+        });
+    </script>
+
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/table2csv.js' %}"> </script>
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+            ClearSelection('targets');
+            ClearSelection('reference');
+            var table = $('#rotamers').DataTable({
+                'scrollX': true,
+                'scrollY': '40vh',
+                'bScrollCollapse': true,
+                'paging': false,
+                'orderCellsTop': true,
+                'autoWidth': false,
+                'dom': 'iTlfrt',
+                'order': [[1, "asc"]], // order by date
+
+                'tableTools': {
+                    "sRowSelect": "single",
+                    "aButtons": []
+                },
+
+                initComplete: function () {
+                    $('#rotamers').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        sRangeFormat: "{from}:{to}",
+                        aoColumns: [
+                            { type: "select" }, // segment
+                            { type: "number-range"}, // seq num
+                            { type: "text" }, // AA
+                            { type: "text" }, // gn
+                            { type: "text" }, // backbone
+                            { type: "text" }, // backbone xtal
+                            { type: "text" }, // rotamer
+                            { type: "text" }, // rotamer xtal
+                        ]
+                    });
+                },
+            });
+            $('#align_btn').click(function () {
+                ClearSelection('targets');
+                AddToSelection('targets', 'structure_model', "{{model.protein.entry_name}}"+"_"+"{{model.state.name}}");
+                AddToSelection('targets', 'structure', "{{model.main_template}}");
+
+                window.location.href = '/structure/selection_convert_model';
+            });
+            $('#superpose_btn').click(function () {
+                var table2 = Array.from("{{template_list}}".split(","));
+                var template_list = []
+                for (i=0; i<table2.length; i++) {
+                    template_list.push(table2[i].replace("&#39;","").replace("&#39;",""))
+                }
+                ClearSelection('targets');
+                ClearSelection('reference');
+                var div = document.createElement("div");
+
+                if ("{{state}}"==="refined") {
+                    div.innerHTML = "{{model.pdb_code.index}}";
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
+                    } else {
+                        AddToSelection('reference', 'structure', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
+                    }
+                }
+                else {
+                    div.innerHTML = "{{model.protein.entry_name}}";
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, '').replace('[','').replace(']','')+"_"+"{{model.state.name}}");
+                    } else {
+                        AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, '').replace('[','').replace(']','')+"_"+"{{model.state.name}}");
+                    }
+                }
+
+                for (i = 0; i < template_list.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = template_list[i];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
+                    }
+                }
+                window.location.href = '/structure/superposition_workflow_index';
+            });
+        });
+
+        // function downloadCSV() {
+        //   $('#rotamers').table2csv({filename: 'Homology_model_templates.csv', quoteFields: true});
+        // }
+    </script>
+
+{% endblock %}
