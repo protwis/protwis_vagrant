@@ -133,3 +133,4 @@ following settings
     Username: protwis
     Password: protwis
 
+just follow instructions
